@@ -14,14 +14,8 @@
             background: linear-gradient(135deg, #a8e0ff 0%, #8ee3f5 100%);
             overflow: hidden;
         }
-        
-        .text-shadow-custom {
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
-        }
-
-        .card {
-            perspective: 1000px;
-        }
+        .text-shadow-custom { text-shadow: 2px 2px 4px rgba(0,0,0,0.4); }
+        .card { perspective: 1000px; }
         .card-inner {
             position: relative;
             width: 100%;
@@ -29,9 +23,7 @@
             transition: transform 0.6s;
             transform-style: preserve-3d;
         }
-        .card.flipped .card-inner {
-            transform: rotateY(180deg);
-        }
+        .card.flipped .card-inner { transform: rotateY(180deg); }
         .card-face {
             position: absolute;
             width: 100%;
@@ -39,63 +31,37 @@
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
         }
-        .card-back {
-            transform: rotateY(180deg);
-        }
+        .card-back { transform: rotateY(180deg); }
         @keyframes card-entry {
             0% { transform: scale(0) rotate(-180deg); opacity: 0; }
             100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
-        .card-entry-animation {
-            animation: card-entry 0.5s ease-out forwards;
-        }
-        #level-modal {
-            transition: opacity 0.3s ease-in-out;
-        }
+        .card-entry-animation { animation: card-entry 0.5s ease-out forwards; }
+        #level-modal { transition: opacity 0.3s ease-in-out; }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen p-4 text-gray-800"><script>
-  function enviarAltura() {
-    // Calcula a altura total do conteúdo do jogo
-    const alturaDoJogo = document.body.scrollHeight;
-
-    // Envia a altura para a página "mãe" (o Blogger)
-    if (window.parent) {
-      window.parent.postMessage({ frameHeight: alturaDoJogo }, '*');
-    }
-  }
-
-  // Envia a altura assim que a página carrega
-  window.onload = enviarAltura;
-  // Envia a altura novamente se o tamanho da janela mudar
-  window.onresize = enviarAltura;
-</script>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 text-gray-800">
 
     <div id="start-screen" class="text-center">
         <h1 class="text-3xl md:text-5xl font-bold text-white mb-4 text-shadow-custom">O Par Certo</h1>
-
         <div class="flex flex-wrap justify-center items-start gap-6 mb-4">
             <div class="bg-white/30 backdrop-blur-sm rounded-xl p-4 w-full max-w-sm text-white shadow-lg border border-white/20 text-shadow-custom">
                 <h2 class="text-2xl font-bold mb-2">Instruções</h2>
                 <ul class="text-left space-y-1">
                     <li>🎯 <span class="font-bold">Objetivo:</span> Encontrar todos os pares masculino/feminino.</li>
-                    <li>🖱️ <span class="font-bold">Como Jogar:</span> Clica num cartão para o virar.</li>
-                    <li>🧠 <span class="font-bold">Memória:</span> Tenta lembrar-te onde está o par.</li>
-                    <li>⏱️ <span class="font-bold">Desafio:</span> Completa todos os níveis o mais rápido possível!</li>
+                    <li>🖱️ <span class="font-bold">Como Jogar:</span> Clique num cartão para o virar.</li>
+                    <li>🧠 <span class="font-bold">Memória:</span> Tente lembrar-se onde está o par.</li>
+                    <li>⏱️ <span class="font-bold">Desafio:</span> Complete todos os níveis o mais rápido possível!</li>
                 </ul>
             </div>
-            
             <div class="bg-white/30 backdrop-blur-sm rounded-xl p-4 w-full max-w-sm text-white shadow-lg border border-white/20 text-shadow-custom">
                 <h2 class="text-2xl font-bold mb-2">🏆 Melhores Tempos 🏆</h2>
-                <div id="ranking-board">
-                    </div>
+                <div id="ranking-board"></div>
             </div>
         </div>
-        
         <div class="mb-4">
-            <input type="text" id="player-name" placeholder="Qual é o teu nome?" class="text-center p-2 rounded-lg shadow-md border-2 border-blue-300 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+            <input type="text" id="player-name" placeholder="Qual é o seu nome?" class="text-center p-2 rounded-lg shadow-md border-2 border-blue-300 focus:outline-none focus:ring-2 focus:ring-yellow-400">
         </div>
-
         <button id="start-button" class="bg-yellow-400 text-white font-bold py-4 px-8 rounded-full shadow-lg transform hover:scale-110 transition-transform duration-200 text-2xl border-4 border-white text-shadow-custom">
             Iniciar Jogo
         </button>
@@ -109,7 +75,6 @@
                 <p id="timer" class="text-xl md:text-2xl text-white font-semibold text-shadow-custom">Tempo: 0s</p>
             </div>
         </header>
-
         <div class="flex justify-center items-center mb-4 space-x-4">
              <label for="language-select" class="text-white font-semibold text-shadow-custom">Traduzir para:</label>
              <select id="language-select" class="rounded-lg p-2 shadow-md border-2 border-blue-300 focus:outline-none focus:ring-2 focus:ring-yellow-400">
@@ -123,7 +88,6 @@
                 <option value="uk-UA">Ucraniano</option>
             </select>
         </div>
-
         <main id="game-board" class="grid grid-cols-3 gap-2 md:gap-4 justify-center w-full max-w-md mx-auto"></main>
     </div>
 
@@ -136,7 +100,6 @@
     </div>
 
     <script>
-        // --- ELEMENTOS DO DOM ---
         const gameBoard = document.getElementById('game-board');
         const levelDisplay = document.getElementById('level-display');
         const languageSelect = document.getElementById('language-select');
@@ -150,10 +113,7 @@
         const timerDisplay = document.getElementById('timer');
         const playAgainContainer = document.getElementById('play-again-container');
         const rankingBoard = document.getElementById('ranking-board');
-        // NOVO: Input do nome do jogador
         const playerNameInput = document.getElementById('player-name');
-
-        // --- DADOS DO JOGO ---
         const wordData = [
             { level: 1, masc: "menino", fem: "menina", pairId: 1, t: { "en-US": "boy/girl", "es-ES": "niño/niña", "fr-FR": "garçon/fille", "de-DE": "Junge/Mädchen", "it-IT": "ragazzo/ragazza", "lv-LV": "zēns/meitene", "uk-UA": "хлопчик/дівчинка" } },
             { level: 1, masc: "gato", fem: "gata", pairId: 2, t: { "en-US": "cat (m/f)", "es-ES": "gato/gata", "fr-FR": "chat/chatte", "de-DE": "Kater/Katze", "it-IT": "gatto/gatta", "lv-LV": "kaķis/kaķene", "uk-UA": "кіт/кішка" } },
@@ -177,20 +137,10 @@
             { level: 5, masc: "o jornalista", fem: "a jornalista", pairId: 20, t: { "en-US": "the journalist (m/f)", "es-ES": "el/la periodista", "fr-FR": "le/la journaliste", "de-DE": "der/die Journalist/in", "it-IT": "il/la giornalista", "lv-LV": "žurnālists/жurnāliste", "uk-UA": "журналіст/журналістка" } },
         ];
         
-        // --- ESTADO DO JOGO ---
-        let currentLevel = 1;
-        const MAX_LEVEL = 5;
-        let flippedCards = [];
-        let matchedPairs = 0;
-        let lockBoard = false;
-        let soundsReady = false;
-        let timerInterval = null;
-        let secondsElapsed = 0;
+        let currentLevel = 1, MAX_LEVEL = 5, flippedCards = [], matchedPairs = 0, lockBoard = false, soundsReady = false, timerInterval = null, secondsElapsed = 0;
         const RANKING_KEY = 'nomesGeneroHighScores';
-        // NOVO: Guarda o nome do jogador atual
         let currentPlayerName = '';
 
-        // --- SONS DO JOGO ---
         const flipSound = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
         const matchSound = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'fmsine' }, envelope: { attack: 0.05, decay: 0.2, sustain: 0.2, release: 0.1 } }).toDestination();
         const levelUpSound = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.05, decay: 0.2, sustain: 0.3, release: 0.5 } }).toDestination();
@@ -200,14 +150,13 @@
         function playMatchSound() { if(soundsReady) matchSound.triggerAttackRelease(["C5", "E5", "G5"], "8n"); }
         function playLevelUpSound() { if(soundsReady) levelUpSound.triggerAttackRelease(["C4", "E4", "G4", "C5"], "4n"); }
         
-        // --- LÓGICA DE FALA ---
         function speak(text, lang = 'pt-PT', translatedText = '', translatedLang = '') {
             if (!soundsReady || typeof speechSynthesis === 'undefined') return;
             speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = lang;
             utterance.rate = 0.9;
-            speechSynthesis.speak( utterance);
+            speechSynthesis.speak(utterance);
             if (translatedText && translatedLang && translatedLang !== 'pt-PT') {
                 const translatedUtterance = new SpeechSynthesisUtterance(translatedText);
                 translatedUtterance.lang = translatedLang;
@@ -216,7 +165,6 @@
             }
         }
         
-        // --- FUNÇÕES DO CRONÓMETRO ---
         function startTimer() {
             if (timerInterval) clearInterval(timerInterval);
             secondsElapsed = 0;
@@ -228,20 +176,15 @@
         }
         function stopTimer() { clearInterval(timerInterval); }
         
-        // --- FUNÇÕES DO RANKING (ALTERADAS) ---
-        function getHighScores() {
-            return JSON.parse(localStorage.getItem(RANKING_KEY)) || [];
-        }
-
+        function getHighScores() { return JSON.parse(localStorage.getItem(RANKING_KEY)) || []; }
         function saveScore(score, name) {
             const newEntry = { name, score };
             const scores = getHighScores();
             scores.push(newEntry);
-            scores.sort((a, b) => a.score - b.score); // Ordena pelo score
+            scores.sort((a, b) => a.score - b.score);
             const topScores = scores.slice(0, 5);
             localStorage.setItem(RANKING_KEY, JSON.stringify(topScores));
         }
-
         function displayRanking() {
             const scores = getHighScores();
             if (scores.length === 0) {
@@ -257,7 +200,6 @@
             rankingBoard.innerHTML = `<ol class="space-y-1">${rankingHTML}</ol>`;
         }
         
-        // --- LÓGICA PRINCIPAL DO JOGO ---
         function shuffle(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -435,13 +377,26 @@
             createLevel();
         }
 
-        // --- INICIALIZAÇÃO ---
         document.addEventListener('DOMContentLoaded', displayRanking);
         startButton.addEventListener('click', startGame);
 
     </script>
+    
+    <script>
+      function enviarAltura() {
+        // Calcula a altura total do conteúdo do jogo
+        const alturaDoJogo = document.body.scrollHeight;
+        
+        // Envia a altura para a página "mãe" (o Blogger)
+        if (window.parent) {
+          window.parent.postMessage({ frameHeight: alturaDoJogo }, '*');
+        }
+      }
+
+      // Envia a altura assim que a página carrega e se a janela mudar de tamanho
+      window.onload = enviarAltura;
+      window.onresize = enviarAltura;
+    </script>
 
 </body>
-
 </html>
-
