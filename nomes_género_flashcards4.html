@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O Par Certo: Masculino e Feminino</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+
+    <style>
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;
+            background: linear-gradient(135deg, #a8e0ff 0%, #8ee3f5 100%);
+            overflow: hidden;
+        }
+        
+        .text-shadow-custom {
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+        }
+
+        .card {
+            perspective: 1000px;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+        }
+        @keyframes card-entry {
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .card-entry-animation {
+            animation: card-entry 0.5s ease-out forwards;
+        }
+        #level-modal {
+            transition: opacity 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 text-gray-800">
+
+    <div id="start-screen" class="text-center">
+        <h1 class="text-3xl md:text-5xl font-bold text-white mb-4 text-shadow-custom">O Par Certo</h1>
+
+        <div class="flex flex-wrap justify-center items-start gap-6 mb-4">
+            <div class="bg-white/30 backdrop-blur-sm rounded-xl p-4 w-full max-w-sm text-white shadow-lg border border-white/20 text-shadow-custom">
+                <h2 class="text-2xl font-bold mb-2">Instruções</h2>
+                <ul class="text-left space-y-1">
+                    <li>🎯 <span class="font-bold">Objetivo:</span> Encontrar todos os pares masculino/feminino.</li>
+                    <li>🖱️ <span class="font-bold">Como Jogar:</span> Clica num cartão para o virar.</li>
+                    <li>🧠 <span class="font-bold">Memória:</span> Tenta lembrar-te onde está o par.</li>
+                    <li>⏱️ <span class="font-bold">Desafio:</span> Completa todos os níveis o mais rápido possível!</li>
+                </ul>
+            </div>
+            
+            <div class="bg-white/30 backdrop-blur-sm rounded-xl p-4 w-full max-w-sm text-white shadow-lg border border-white/20 text-shadow-custom">
+                <h2 class="text-2xl font-bold mb-2">🏆 Melhores Tempos 🏆</h2>
+                <div id="ranking-board">
+                    </div>
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            <input type="text" id="player-name" placeholder="Qual é o teu nome?" class="text-center p-2 rounded-lg shadow-md border-2 border-blue-300 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+        </div>
+
+        <button id="start-button" class="bg-yellow-400 text-white font-bold py-4 px-8 rounded-full shadow-lg transform hover:scale-110 transition-transform duration-200 text-2xl border-4 border-white text-shadow-custom">
+            Iniciar Jogo
+        </button>
+    </div>
+
+    <div id="game-container" class="w-full max-w-4xl mx-auto hidden">
+        <header class="text-center mb-4">
+            <h1 class="text-3xl md:text-5xl font-bold text-white text-shadow-custom">O Par Certo</h1>
+            <div class="flex justify-center items-center space-x-6 mt-2">
+                <p id="level-display" class="text-xl md:text-2xl text-white font-semibold text-shadow-custom">Nível 1</p>
+                <p id="timer" class="text-xl md:text-2xl text-white font-semibold text-shadow-custom">Tempo: 0s</p>
+            </div>
+        </header>
+
+        <div class="flex justify-center items-center mb-4 space-x-4">
+             <label for="language-select" class="text-white font-semibold text-shadow-custom">Traduzir para:</label>
+             <select id="language-select" class="rounded-lg p-2 shadow-md border-2 border-blue-300 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                <option value="pt-PT">Português</option>
+                <option value="en-US">Inglês</option>
+                <option value="es-ES">Espanhol</option>
+                <option value="fr-FR">Francês</option>
+                <option value="de-DE">Alemão</option>
+                <option value="it-IT">Italiano</option>
+                <option value="lv-LV">Letão</option>
+                <option value="uk-UA">Ucraniano</option>
+            </select>
+        </div>
+
+        <main id="game-board" class="grid grid-cols-3 gap-2 md:gap-4 justify-center w-full max-w-md mx-auto"></main>
+    </div>
+
+    <div id="level-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center opacity-0 pointer-events-none z-50">
+        <div id="modal-content" class="bg-white rounded-2xl p-8 text-center shadow-2xl transform scale-0 transition-transform duration-300 ease-out">
+            <h2 id="modal-title" class="text-4xl font-bold text-yellow-500 mb-2">Excelente!</h2>
+            <p id="modal-message" class="text-xl text-gray-600 mb-4">Nível 1 completo!</p>
+            <div id="play-again-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- ELEMENTOS DO DOM ---
+        const gameBoard = document.getElementById('game-board');
+        const levelDisplay = document.getElementById('level-display');
+        const languageSelect = document.getElementById('language-select');
+        const levelModal = document.getElementById('level-modal');
+        const modalContent = document.getElementById('modal-content');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const startScreen = document.getElementById('start-screen');
+        const startButton = document.getElementById('start-button');
+        const gameContainer = document.getElementById('game-container');
+        const timerDisplay = document.getElementById('timer');
+        const playAgainContainer = document.getElementById('play-again-container');
+        const rankingBoard = document.getElementById('ranking-board');
+        // NOVO: Input do nome do jogador
+        const playerNameInput = document.getElementById('player-name');
+
+        // --- DADOS DO JOGO ---
+        const wordData = [
+            { level: 1, masc: "menino", fem: "menina", pairId: 1, t: { "en-US": "boy/girl", "es-ES": "niño/niña", "fr-FR": "garçon/fille", "de-DE": "Junge/Mädchen", "it-IT": "ragazzo/ragazza", "lv-LV": "zēns/meitene", "uk-UA": "хлопчик/дівчинка" } },
+            { level: 1, masc: "gato", fem: "gata", pairId: 2, t: { "en-US": "cat (m/f)", "es-ES": "gato/gata", "fr-FR": "chat/chatte", "de-DE": "Kater/Katze", "it-IT": "gatto/gatta", "lv-LV": "kaķis/kaķene", "uk-UA": "кіт/кішка" } },
+            { level: 1, masc: "primo", fem: "prima", pairId: 3, t: { "en-US": "cousin (m/f)", "es-ES": "primo/prima", "fr-FR": "cousin/cousine", "de-DE": "Cousin/Cousine", "it-IT": "cugino/cugina", "lv-LV": "brālēns/māsīca", "uk-UA": "двоюрідний брат/сестра" } },
+            { level: 1, masc: "tio", fem: "tia", pairId: 4, t: { "en-US": "uncle/aunt", "es-ES": "tío/tía", "fr-FR": "oncle/tante", "de-DE": "Onkel/Tante", "it-IT": "zio/zia", "lv-LV": "tēvocis/tante", "uk-UA": "дядько/тітка" } },
+            { level: 2, masc: "pintor", fem: "pintora", pairId: 5, t: { "en-US": "painter (m/f)", "es-ES": "pintor/pintora", "fr-FR": "peintre (m/f)", "de-DE": "Maler/Malerin", "it-IT": "pittore/pittrice", "lv-LV": "gleznotājs/gleznotāja", "uk-UA": "художник/художниця" } },
+            { level: 2, masc: "português", fem: "portuguesa", pairId: 6, t: { "en-US": "portuguese (m/f)", "es-ES": "portugués/portuguesa", "fr-FR": "portugais/portugaise", "de-DE": "Portugiese/Portugiesin", "it-IT": "portoghese (m/f)", "lv-LV": "portugālis/portugāliete", "uk-UA": "португалець/португалка" } },
+            { level: 2, masc: "leão", fem: "leoa", pairId: 7, t: { "en-US": "lion/lioness", "es-ES": "león/leona", "fr-FR": "lion/lionne", "de-DE": "Löwe/Löwin", "it-IT": "leone/leonessa", "lv-LV": "lauva/lauvene", "uk-UA": "лев/левиця" } },
+            { level: 2, masc: "anão", fem: "anã", pairId: 8, t: { "en-US": "dwarf (m/f)", "es-ES": "enano/enana", "fr-FR": "nain/naine", "de-DE": "Zwerg/Zwergin", "it-IT": "nano/nana", "lv-LV": "rūķis/rūķe", "uk-UA": "гном/гномиха" } },
+            { level: 3, masc: "ator", fem: "atriz", pairId: 9, t: { "en-US": "actor/actress", "es-ES": "actor/actriz", "fr-FR": "acteur/actrice", "de-DE": "Schauspieler/Schauspielerin", "it-IT": "attore/attrice", "lv-LV": "aktieris/aktrise", "uk-UA": "актор/актриса" } },
+            { level: 3, masc: "conde", fem: "condessa", pairId: 10, t: { "en-US": "count/countess", "es-ES": "conde/condesa", "fr-FR": "comte/comtesse", "de-DE": "Graf/Gräfin", "it-IT": "conte/contessa", "lv-LV": "grāfs/grāfiene", "uk-UA": "граф/графиня" } },
+            { level: 3, masc: "poeta", fem: "poetisa", pairId: 11, t: { "en-US": "poet (m/f)", "es-ES": "poeta/poetisa", "fr-FR": "poète/poétesse", "de-DE": "Dichter/Dichterin", "it-IT": "poeta/poetessa", "lv-LV": "dzejnieks/dzejniece", "uk-UA": "поет/поетеса" } },
+            { level: 3, masc: "galo", fem: "galinha", pairId: 12, t: { "en-US": "rooster/hen", "es-ES": "gallo/gallina", "fr-FR": "coq/poule", "de-DE": "Hahn/Henne", "it-IT": "gallo/gallina", "lv-LV": "gailis/vista", "uk-UA": "півень/курка" } },
+            { level: 4, masc: "homem", fem: "mulher", pairId: 13, t: { "en-US": "man/woman", "es-ES": "hombre/mujer", "fr-FR": "homme/femme", "de-DE": "Mann/Frau", "it-IT": "uomo/donna", "lv-LV": "vīrietis/sieviete", "uk-UA": "чоловік/жінка" } },
+            { level: 4, masc: "pai", fem: "mãe", pairId: 14, t: { "en-US": "father/mother", "es-ES": "padre/madre", "fr-FR": "père/mère", "de-DE": "Vater/Mutter", "it-IT": "padre/madre", "lv-LV": "tēvs/māte", "uk-UA": "батько/мати" } },
+            { level: 4, masc: "cavalo", fem: "égua", pairId: 15, t: { "en-US": "horse/mare", "es-ES": "caballo/yegua", "fr-FR": "cheval/jument", "de-DE": "Pferd/Stute", "it-IT": "cavallo/giumenta", "lv-LV": "zirgs/ķēve", "uk-UA": "кінь/кобила" } },
+            { level: 4, masc: "boi", fem: "vaca", pairId: 16, t: { "en-US": "ox/cow", "es-ES": "toro/vaca", "fr-FR": "bœuf/vache", "de-DE": "Ochse/Kuh", "it-IT": "bue/mucca", "lv-LV": "vērsis/govs", "uk-UA": "віл/корова" } },
+            { level: 5, masc: "o estudante", fem: "a estudante", pairId: 17, t: { "en-US": "the student (m/f)", "es-ES": "el/la estudiante", "fr-FR": "l'étudiant/l'étudiante", "de-DE": "der/die Student/in", "it-IT": "lo/la studente", "lv-LV": "students/studente", "uk-UA": "студент/студентка" } },
+            { level: 5, masc: "o pianista", fem: "a pianista", pairId: 18, t: { "en-US": "the pianist (m/f)", "es-ES": "el/la pianista", "fr-FR": "le/la pianiste", "de-DE": "der/die Pianist/in", "it-IT": "il/la pianista", "lv-LV": "pianists/pianiste", "uk-UA": "піаніст/піаністка" } },
+            { level: 5, masc: "o dentista", fem: "a dentista", pairId: 19, t: { "en-US": "the dentist (m/f)", "es-ES": "el/la dentista", "fr-FR": "le/la dentiste", "de-DE": "der/die Zahnarzt/Zahnärztin", "it-IT": "il/la dentista", "lv-LV": "zobārsts/zobārste", "uk-UA": "стоматолог (ч/ж)" } },
+            { level: 5, masc: "o jornalista", fem: "a jornalista", pairId: 20, t: { "en-US": "the journalist (m/f)", "es-ES": "el/la periodista", "fr-FR": "le/la journaliste", "de-DE": "der/die Journalist/in", "it-IT": "il/la giornalista", "lv-LV": "žurnālists/жurnāliste", "uk-UA": "журналіст/журналістка" } },
+        ];
+        
+        // --- ESTADO DO JOGO ---
+        let currentLevel = 1;
+        const MAX_LEVEL = 5;
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let lockBoard = false;
+        let soundsReady = false;
+        let timerInterval = null;
+        let secondsElapsed = 0;
+        const RANKING_KEY = 'nomesGeneroHighScores';
+        // NOVO: Guarda o nome do jogador atual
+        let currentPlayerName = '';
+
+        // --- SONS DO JOGO ---
+        const flipSound = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
+        const matchSound = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'fmsine' }, envelope: { attack: 0.05, decay: 0.2, sustain: 0.2, release: 0.1 } }).toDestination();
+        const levelUpSound = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.05, decay: 0.2, sustain: 0.3, release: 0.5 } }).toDestination();
+
+        async function setupSounds() { if (!soundsReady) { await Tone.start(); soundsReady = true; } }
+        function playFlipSound() { if(soundsReady) flipSound.triggerAttackRelease("C5", "8n"); }
+        function playMatchSound() { if(soundsReady) matchSound.triggerAttackRelease(["C5", "E5", "G5"], "8n"); }
+        function playLevelUpSound() { if(soundsReady) levelUpSound.triggerAttackRelease(["C4", "E4", "G4", "C5"], "4n"); }
+        
+        // --- LÓGICA DE FALA ---
+        function speak(text, lang = 'pt-PT', translatedText = '', translatedLang = '') {
+            if (!soundsReady || typeof speechSynthesis === 'undefined') return;
+            speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang;
+            utterance.rate = 0.9;
+            speechSynthesis.speak( utterance);
+            if (translatedText && translatedLang && translatedLang !== 'pt-PT') {
+                const translatedUtterance = new SpeechSynthesisUtterance(translatedText);
+                translatedUtterance.lang = translatedLang;
+                translatedUtterance.rate = 0.9;
+                speechSynthesis.speak(translatedUtterance);
+            }
+        }
+        
+        // --- FUNÇÕES DO CRONÓMETRO ---
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            secondsElapsed = 0;
+            timerDisplay.textContent = `Tempo: ${secondsElapsed}s`;
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                timerDisplay.textContent = `Tempo: ${secondsElapsed}s`;
+            }, 1000);
+        }
+        function stopTimer() { clearInterval(timerInterval); }
+        
+        // --- FUNÇÕES DO RANKING (ALTERADAS) ---
+        function getHighScores() {
+            return JSON.parse(localStorage.getItem(RANKING_KEY)) || [];
+        }
+
+        function saveScore(score, name) {
+            const newEntry = { name, score };
+            const scores = getHighScores();
+            scores.push(newEntry);
+            scores.sort((a, b) => a.score - b.score); // Ordena pelo score
+            const topScores = scores.slice(0, 5);
+            localStorage.setItem(RANKING_KEY, JSON.stringify(topScores));
+        }
+
+        function displayRanking() {
+            const scores = getHighScores();
+            if (scores.length === 0) {
+                rankingBoard.innerHTML = '<p class="text-lg">Ainda não há tempos registados. Seja o primeiro!</p>';
+                return;
+            }
+            const rankingHTML = scores.map((entry, index) => `
+                <li class="text-lg flex justify-between px-4">
+                    <span>${index + 1}º - ${entry.name}</span>
+                    <span>${entry.score} segundos</span>
+                </li>
+            `).join('');
+            rankingBoard.innerHTML = `<ol class="space-y-1">${rankingHTML}</ol>`;
+        }
+        
+        // --- LÓGICA PRINCIPAL DO JOGO ---
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        
+        function handleCardClick(event) { flipCard(event.currentTarget); }
+        function handleCardKeydown(event) { if (event.key === 'Enter') { flipCard(event.currentTarget); } }
+
+        function createLevel() {
+            gameBoard.innerHTML = '';
+            playAgainContainer.innerHTML = '';
+            matchedPairs = 0;
+            levelDisplay.textContent = `Nível ${currentLevel}`;
+            const levelWords = wordData.filter(word => word.level === currentLevel);
+            const selectedPairs = shuffle(levelWords).slice(0, 4);
+            const cards = [];
+            selectedPairs.forEach(pair => {
+                cards.push({ text: pair.masc, pairId: pair.pairId, translations: pair.t });
+                cards.push({ text: pair.fem, pairId: pair.pairId, translations: pair.t });
+            });
+            const cardElements = [];
+            shuffle(cards).forEach((cardData, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.setAttribute('role', 'button');
+                cardElement.setAttribute('tabindex', '0');
+                cardElement.setAttribute('aria-label', 'Cartão, face para baixo');
+                cardElement.classList.add('card', 'w-24', 'h-32', 'md:w-32', 'md:h-40', 'relative', 'cursor-pointer');
+                cardElement.dataset.pairId = cardData.pairId;
+                cardElement.style.opacity = '0';
+                cardElement.style.animationDelay = `${index * 50}ms`;
+                cardElement.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-face card-front absolute w-full h-full rounded-lg shadow-lg flex items-center justify-center bg-yellow-400 border-4 border-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><title>Verso do cartão</title><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                        <div class="card-face card-back absolute w-full h-full rounded-lg shadow-lg flex flex-col items-center justify-center bg-white border-4 border-blue-400 p-2 text-center">
+                            <p class="text-sm md:text-lg font-bold break-words">${cardData.text}</p>
+                            <button class="speak-btn absolute bottom-1 right-1 p-1 rounded-full bg-blue-100 hover:bg-blue-300" aria-label="Ouvir palavra"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg></button>
+                        </div>
+                    </div>
+                `;
+                cardElements.push(cardElement);
+                cardElement.addEventListener('click', handleCardClick);
+                cardElement.addEventListener('keydown', handleCardKeydown);
+                cardElement.querySelector('.speak-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const selectedLang = languageSelect.value;
+                    const translatedText = cardData.translations[selectedLang] || '';
+                    speak(cardData.text, 'pt-PT', translatedText, selectedLang);
+                });
+            });
+            const decorativeCard = document.createElement('div');
+            decorativeCard.classList.add('w-24', 'h-32', 'md:w-32', 'md:h-40', 'flex', 'items-center', 'justify-center');
+            decorativeCard.innerHTML = `<div class="w-20 h-20 md:w-28 md:h-28 bg-blue-500 rounded-full flex items-center justify-center text-white text-4xl shadow-lg" role="presentation">⭐</div>`;
+            cardElements.splice(4, 0, decorativeCard);
+            cardElements.forEach(el => {
+                gameBoard.appendChild(el);
+                if (el.classList.contains('card')) {
+                    el.classList.add('card-entry-animation');
+                }
+            });
+        }
+
+        function flipCard(card) {
+            if (lockBoard || card.classList.contains('flipped') || flippedCards.length >= 2) return;
+            card.classList.add('flipped');
+            card.setAttribute('aria-label', card.querySelector('.card-back p').textContent);
+            playFlipSound();
+            flippedCards.push(card);
+            if (flippedCards.length === 2) {
+                checkForMatch();
+            }
+        }
+
+        function checkForMatch() {
+            lockBoard = true;
+            const [cardOne, cardTwo] = flippedCards;
+            if (cardOne.dataset.pairId === cardTwo.dataset.pairId) {
+                setTimeout(() => {
+                    playMatchSound();
+                    disableCards();
+                    matchedPairs++;
+                    if (matchedPairs === 4) { handleLevelEnd(); }
+                }, 500);
+            } else {
+                setTimeout(unflipCards, 1200);
+            }
+        }
+
+        function disableCards() {
+            flippedCards.forEach(card => {
+                card.removeEventListener('click', handleCardClick);
+                card.removeEventListener('keydown', handleCardKeydown);
+                card.setAttribute('tabindex', '-1');
+            });
+            resetBoard();
+        }
+
+        function unflipCards() {
+            flippedCards.forEach(card => {
+                card.classList.remove('flipped');
+                card.setAttribute('aria-label', 'Cartão, face para baixo');
+            });
+            resetBoard();
+        }
+
+        function resetBoard() { [flippedCards, lockBoard] = [[], false]; }
+        
+        function handleLevelEnd() {
+            setTimeout(() => {
+                playLevelUpSound();
+                if (currentLevel < MAX_LEVEL) {
+                    modalTitle.textContent = "Muito Bem!";
+                    modalMessage.textContent = `Nível ${currentLevel} completo!`;
+                    showModal();
+                    setTimeout(() => {
+                        hideModal();
+                        currentLevel++;
+                        createLevel();
+                    }, 2500);
+                } else {
+                    stopTimer();
+                    saveScore(secondsElapsed, currentPlayerName);
+                    modalTitle.textContent = "Parabéns!";
+                    modalMessage.textContent = `Completaste o jogo em ${secondsElapsed} segundos!`;
+                    
+                    const playAgainButton = document.createElement('button');
+                    playAgainButton.textContent = 'Jogar Novamente';
+                    playAgainButton.className = 'mt-4 bg-yellow-400 text-white font-bold py-2 px-6 rounded-full shadow-lg transform hover:scale-105 transition-transform duration-200 text-lg border-2 border-white text-shadow-custom';
+                    playAgainButton.onclick = restartGame;
+                    playAgainContainer.appendChild(playAgainButton);
+                    
+                    showModal();
+                }
+            }, 800);
+        }
+        
+        function showModal() {
+            levelModal.classList.remove('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-0');
+            modalContent.classList.add('scale-100');
+        }
+
+        function hideModal() {
+            levelModal.classList.add('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-0');
+        }
+
+        function restartGame() {
+            hideModal();
+            setTimeout(() => {
+                currentLevel = 1;
+                displayRanking();
+                gameContainer.classList.add('hidden');
+                startScreen.classList.remove('hidden');
+            }, 500);
+        }
+
+        async function startGame() {
+            const playerName = playerNameInput.value.trim();
+            if (!playerName) {
+                alert("Por favor, introduza o seu nome para começar!");
+                return;
+            }
+            currentPlayerName = playerName;
+
+            await setupSounds();
+            startScreen.classList.add('hidden');
+            gameContainer.classList.remove('hidden');
+            startTimer();
+            createLevel();
+        }
+
+        // --- INICIALIZAÇÃO ---
+        document.addEventListener('DOMContentLoaded', displayRanking);
+        startButton.addEventListener('click', startGame);
+
+    </script>
+
+</body>
+</html>
