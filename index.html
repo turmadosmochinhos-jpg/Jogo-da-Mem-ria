@@ -12,7 +12,7 @@
         body {
             font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;
             background: linear-gradient(135deg, #a8e0ff 0%, #8ee3f5 100%);
-            overflow: hidden;
+            overflow: hidden; /* Esconde scrollbars do corpo do jogo */
         }
         .text-shadow-custom { text-shadow: 2px 2px 4px rgba(0,0,0,0.4); }
         .card { perspective: 1000px; }
@@ -384,18 +384,13 @@
     
     <script>
       function enviarAltura() {
-        // Calcula a altura total do conteúdo do jogo
         const alturaDoJogo = document.body.scrollHeight;
-        
-        // Envia a altura para a página "mãe" (o Blogger)
         if (window.parent) {
           window.parent.postMessage({ frameHeight: alturaDoJogo }, '*');
         }
       }
-
-      // Envia a altura assim que a página carrega e se a janela mudar de tamanho
+      // A altura só é enviada quando a página carrega por completo.
       window.onload = enviarAltura;
-      window.onresize = enviarAltura;
     </script>
 
 </body>
