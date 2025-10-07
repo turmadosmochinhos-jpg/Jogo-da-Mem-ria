@@ -54,7 +54,22 @@
         }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen p-4 text-gray-800">
+<body class="flex flex-col items-center justify-center min-h-screen p-4 text-gray-800"><script>
+  function enviarAltura() {
+    // Calcula a altura total do conteúdo do jogo
+    const alturaDoJogo = document.body.scrollHeight;
+
+    // Envia a altura para a página "mãe" (o Blogger)
+    if (window.parent) {
+      window.parent.postMessage({ frameHeight: alturaDoJogo }, '*');
+    }
+  }
+
+  // Envia a altura assim que a página carrega
+  window.onload = enviarAltura;
+  // Envia a altura novamente se o tamanho da janela mudar
+  window.onresize = enviarAltura;
+</script>
 
     <div id="start-screen" class="text-center">
         <h1 class="text-3xl md:text-5xl font-bold text-white mb-4 text-shadow-custom">O Par Certo</h1>
@@ -429,3 +444,4 @@
 </body>
 
 </html>
+
